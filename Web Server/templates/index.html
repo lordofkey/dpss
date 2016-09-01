@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="ch">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+     <script type="text/javascript" src="{{ url_for('static',filename = 'jquery-3.0.0.min.js') }}"></script>
+</head>
+<body>
+<div style="width:1000px; margin:0 auto">
+    <div style="width:50%; float:left">
+        <h1>服务器状态</h1>
+        <ul id = "list">
+        </ul>
+    </div>
+    <div style="width:50%; float:left">
+        <h1>数据库状态</h1>
+        <ul id = "nums">
+        </ul>
+    </div>
+</div>
+
+<script>
+    function refreshstatus(){
+        $.get("{{ url_for('getstatus') }}",0,updatadata)
+        $.get("{{ url_for('getrecord') }}",0,updatanum)
+    }
+    function updatadata(data) {
+        tt = eval("(" + data + ")")
+        document.getElementById("list").innerHTML = ""
+        for (var key in tt) {
+            node = document.createElement("li")
+            node.innerHTML = key + ":" + tt[key]
+            document.getElementById("list").appendChild(node)
+        }
+    }
+    function updatanum(data) {
+        tt = eval("(" + data + ")")
+        document.getElementById("nums").innerHTML = ""
+        for (var key in tt) {
+            node = document.createElement("li")
+            node.innerHTML = key + ":" + tt[key]
+            document.getElementById("nums").appendChild(node)
+        }
+    }
+    setInterval(refreshstatus, 1000)
+
+
+</script>
+
+</body>
+</html>

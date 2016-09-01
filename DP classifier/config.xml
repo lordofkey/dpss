@@ -1,0 +1,10 @@
+<?xml version="1.0"?> 
+<config> 
+  <modelnum>3</modelnum>
+  <model name="pb_c" type="caffe" path="dl/pb_c/"> 
+  </model> 
+  <model name="yiwu" type="caffe" path="dl/yiwu/"> 
+  </model> 
+  <model name="yw_t" type="tensorflow" path="dl/yw_t/"> 
+  </model> 
+</config> 
