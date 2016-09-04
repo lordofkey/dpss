@@ -5,12 +5,10 @@ import cv2
 import struct
 import Queue
 import threading
-import os
-import time
 import dpmanager
 import logging
 import pymongo
-
+import datetime
 
 
 logger = logging.getLogger('TOEClogger')
@@ -84,7 +82,7 @@ def receivedata():
             logger.exception("dumped during receiving")
         finally:
             try:
-                dbclient.deepldb.test.save({'imgadr': adrr, 'result': m_rlt, 'sername': param})
+                dbclient.deepldb.test.save({'imgadr': adrr, 'result': m_rlt, 'sername': param, 'recordtime': datetime.datetime.now()})
             except:
                 logger.exception("db Exception")
             try:
@@ -110,7 +108,7 @@ def updateshow():
             data = struct.pack('i', shownum)
             data += struct.pack('=i'+str(len("receivelist"))+'si', len("receivelist"), "receivelist", connum)
             for ser in serlist:
-                data += struct.pack('=i'+str(len(ser[0]))+'si', len(ser[0]), ser[0], ser[1])
+                data += struct.pack('=i'+str(len(ser[0]))+'s2i', len(ser[0]), ser[0], ser[1], ser[2])
             conn.sendall(data)
             conn.close()
         except:
@@ -122,7 +120,7 @@ try:
     sthread.start()
 
 #创建接收线程
-    for i in range(100):
+    for i in range(20):
         sthread = threading.Thread(target=receivedata)
         sthread.setDaemon(True)
         sthread.start()

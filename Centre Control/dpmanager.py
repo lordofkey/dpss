@@ -18,6 +18,7 @@ class ModelPro:
         self.initconnect(conn)
         self.qimpro = Queue.Queue()
         self.flag = 1
+        self.fps = 0
         sthread = threading.Thread(target=self.imgpro)
         sthread.setDaemon(True)
         sthread.start()
@@ -45,7 +46,7 @@ class ModelPro:
                 img_in = cv2.resize(img_in, (self.width, self.height))
                 self.conn.sendall(img_in.data.__str__())
                 data = self.conn.recv(128)
-                len1, len2 = struct.unpack("2i",data[:8])
+                len1, len2, self.fps = struct.unpack("3i",data[:12])
                 m_rlt, adrr = struct.unpack(str(len1) + 's' + str(len2) + 's',data[8:])
                 Qpro.put((m_rlt, adrr))
             except Queue.Empty:
@@ -128,7 +129,7 @@ class ModelManage:
         qlist = list()
         self.listmutex.acquire()
         for model in self.modellist:
-            qlist.append((model.name, model.qimpro.qsize()))
+            qlist.append((model.name, model.qimpro.qsize(), model.fps ))
         self.listmutex.release()
         return qlist
 

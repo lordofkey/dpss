@@ -12,6 +12,7 @@ import os
 
 workdir = os.getcwd()
 innerhost = "172.1.10.134"
+innerhost = "192.168.18.3"
 innerport = 9233
 
 SAVE_IMG = 1
@@ -67,6 +68,8 @@ class models(object):
             self.sess = tf.Session(config = tf.ConfigProto(gpu_options = gpu_options))
             saver.restore(self.sess, ckpt.model_checkpoint_path)
             print 'tf done!'
+        elif self.type == "test":
+            pass
         else:
             print 'can not recognized the frame!'
     def initlabel(self):
@@ -106,6 +109,7 @@ class FpsCheck(object):
         self.stime = datetime.datetime.now()
         self.pronum = 0
         self.tick = tickt
+        self.fps = 0
 
     def process(self):
         self.pronum += 1
@@ -113,7 +117,8 @@ class FpsCheck(object):
             fps = (self.tick)/((datetime.datetime.now() - self.stime).total_seconds())
             self.pronum = 0
             self.stime = datetime.datetime.now()
-            print 'fps:', fps
+            self.fps = fps
+        return self.fps
 
 m_date = str(datetime.datetime.now().strftime("%Y-%m-%d-%H:%M:%S"))
 mn = int(sys.argv[1])
@@ -159,8 +164,10 @@ while True:
         img_in = img_in.astype(np.float32)
         img_in /= 255
         predictions = m_model.sess.run(m_model.pred, feed_dict={m_model.x: [img_in], m_model.keep_prob: 1.})
+    else:
+        predictions = (2.2, 1.6)
     m_rlt = m_model.labels[np.argmax(predictions)]
-    fps.process()
+    fps = fps.process()
     if(0 == ca_num % 2000):
         picFolder = str(ca_num)
     filename = workdir + '/pic/' + m_model.name + '/' + m_date + '/' + m_rlt + '/' + picFolder + '/' + str(ca_num) + '.jpg'
@@ -169,7 +176,7 @@ while True:
         cv2.imwrite(filename, img)
     len_m_rlt = len(m_rlt)
     len_filename = len(filename)
-    data = struct.pack('=2i' + str(len_m_rlt) + 's' + str(len_filename) + 's', len_m_rlt, len_filename, m_rlt, filename)
+    data = struct.pack('=3i' + str(len_m_rlt) + 's' + str(len_filename) + 's', len_m_rlt, len_filename, fps, m_rlt, filename)
     s.send(data)
     ca_num += 1
 s.close()

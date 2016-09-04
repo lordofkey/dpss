@@ -7,4 +7,6 @@
   </model> 
   <model name="yw_t" type="tensorflow" path="dl/yw_t/"> 
   </model> 
+  <model name="yw_t" type="test" path="dl/test/"> 
+  </model> 
 </config> 

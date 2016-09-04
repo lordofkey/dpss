@@ -6,9 +6,9 @@ import struct
 import json
 import pymongo
 
-cnnhost = "172.1.10.134"
+cnnhost = "192.168.18.3"
 cnnport = 10102
-dbhost = "172.1.10.134"
+dbhost = "127.0.0.1"
 dbport = 27017
 app = Flask(__name__)
 
@@ -25,13 +25,16 @@ def getstatus():
         s.connect((cnnhost, cnnport))
         data = s.recv(4)
         num,  = struct.unpack('i',data)
-
-        for i in range(num):
+        snum, = struct.unpack('i', s.recv(4))
+        name, value = struct.unpack('=' + str(snum) + 'si', s.recv(snum + 4))
+        res['外部连接负载'] = value
+        for i in range(num-1):
             snum,  = struct.unpack('i', s.recv(4))
-            name, value = struct.unpack('='+str(snum)+'si', s.recv(snum+4))
-            if name == "receivelist":
-                name = '外部连接负载'
-            res[name] = value
+            name, value, fps = struct.unpack('='+str(snum)+'s2i', s.recv(snum+8))
+            tmp = {}
+            tmp["负载"] = value
+            tmp["fps"] = fps
+            res[name] = tmp
     except:
         res["CNNSERVER 连接失败"] = 0
     js = json.dumps(res, ensure_ascii=False)
@@ -40,7 +43,7 @@ def getstatus():
 @app.route('/getrecord')
 def getrecord():
     client = pymongo.MongoClient(dbhost, dbport)
-    num =  client.deepldb.test.count()
+    num = client.deepldb.test.count()
     sernams = client.deepldb.test.distinct("sername")
     res = {}
     res["总记录数目"] = num
