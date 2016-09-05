@@ -19,7 +19,7 @@ int main()
 	while(true)
 	{
 		i ++;
-		if(SendImg(image, "yw_t"))
+		if(SendImg(image, "pb_c"))
 		{
 	//		std::cout << "sended1" << std::endl;
 		}

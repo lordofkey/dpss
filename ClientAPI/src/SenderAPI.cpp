@@ -27,6 +27,7 @@ SENDERAPI_API bool SendImg(cv::Mat imgin, const char name[],void *param)
 	aa->index = 0;
 	aa->param = param;
 	aa->img = imgin.clone();
+	cv::cvtColor(aa->img, aa->img, CV_RGB2GRAY);
 	strcpy(aa->m_name,name);
 	if(!que.pump(aa))
 	{
