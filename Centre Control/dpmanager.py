@@ -47,11 +47,12 @@ class ModelPro:
                 self.conn.sendall(img_in.data.__str__())
                 data = self.conn.recv(128)
                 len1, len2, self.fps = struct.unpack("3i",data[:12])
-                m_rlt, adrr = struct.unpack(str(len1) + 's' + str(len2) + 's',data[8:])
+                m_rlt, adrr = struct.unpack(str(len1) + 's' + str(len2) + 's',data[12:])
                 Qpro.put((m_rlt, adrr))
             except Queue.Empty:
                 self.conn.sendall('are you there?')
                 data = self.conn.recv(3)
+		self.fps = 0
                 if data == 'yes':
                     continue
                 else:

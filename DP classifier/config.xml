@@ -1,12 +1,12 @@
 <?xml version="1.0"?> 
 <config> 
-  <modelnum>3</modelnum>
+  <modelnum>4</modelnum>
   <model name="pb_c" type="caffe" path="dl/pb_c/"> 
   </model> 
-  <model name="yiwu" type="caffe" path="dl/yiwu/"> 
+  <model name="pb_t" type="tensorflow" path="dl/pb_t/"> 
+  </model> 
+  <model name="yw_c" type="caffe" path="dl/yw_c/"> 
   </model> 
   <model name="yw_t" type="tensorflow" path="dl/yw_t/"> 
-  </model> 
-  <model name="yw_t" type="test" path="dl/test/"> 
   </model> 
 </config> 

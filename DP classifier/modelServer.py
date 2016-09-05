@@ -12,10 +12,9 @@ import os
 
 workdir = os.getcwd()
 innerhost = "172.1.10.134"
-innerhost = "192.168.18.3"
 innerport = 9233
 
-SAVE_IMG = 1
+SAVE_IMG = 0
 
 width = 227
 height = 227
@@ -100,7 +99,7 @@ def receiveimg(s, imglen):
         if recv_size == 14:
             if data == 'are you there?':
                 s.sendall('yes')
-                raise CycCheck
+                data = ''
     return data
 
 
@@ -167,7 +166,7 @@ while True:
     else:
         predictions = (2.2, 1.6)
     m_rlt = m_model.labels[np.argmax(predictions)]
-    fps = fps.process()
+    nfps = fps.process()
     if(0 == ca_num % 2000):
         picFolder = str(ca_num)
     filename = workdir + '/pic/' + m_model.name + '/' + m_date + '/' + m_rlt + '/' + picFolder + '/' + str(ca_num) + '.jpg'
@@ -176,7 +175,7 @@ while True:
         cv2.imwrite(filename, img)
     len_m_rlt = len(m_rlt)
     len_filename = len(filename)
-    data = struct.pack('=3i' + str(len_m_rlt) + 's' + str(len_filename) + 's', len_m_rlt, len_filename, fps, m_rlt, filename)
-    s.send(data)
+    data = struct.pack('=3i' + str(len_m_rlt) + 's' + str(len_filename) + 's', len_m_rlt, len_filename, nfps, m_rlt, filename)
+    s.sendall(data)
     ca_num += 1
 s.close()

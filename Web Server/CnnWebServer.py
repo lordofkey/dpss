@@ -6,9 +6,9 @@ import struct
 import json
 import pymongo
 
-cnnhost = "192.168.18.3"
+cnnhost = "172.1.10.134"
 cnnport = 10102
-dbhost = "127.0.0.1"
+dbhost = "172.1.10.134"
 dbport = 27017
 app = Flask(__name__)
 
@@ -55,4 +55,6 @@ def getrecord():
     return js
 
 if __name__ == '__main__':
-    app.run()
+    from werkzeug.contrib.fixers import ProxyFix
+    app.wsgi_app = ProxyFix(app.wsgi_app)
+    app.run("0.0.0.0", 5001)

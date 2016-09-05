@@ -21,7 +21,7 @@ formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(messag
 fh.setFormatter(formatter)
 ch.setFormatter(formatter)
 logger.addHandler(fh)
-#logger.addHandler(ch)
+logger.addHandler(ch)
 
 dbclient = pymongo.MongoClient(host="172.1.10.134")
 Qcon = Queue.Queue(200)
@@ -57,9 +57,9 @@ def receivedata():
                 conn.send(buf)
                 conn.close()
                 return
-            lens = struct.unpack('2i', conn.recv(8))
+            lens = struct.unpack('3i', conn.recv(12))
             param = struct.unpack(str(lens[0]) + 's', conn.recv(lens[0]))[0]
-            file_size = lens[1]
+            file_size = lens[1] * lens[2]
             recv_size = 0
             data = ''
             while recv_size < file_size:
@@ -71,7 +71,7 @@ def receivedata():
                     data += temp_recv
                 recv_size = len(data)
             data = np.fromstring(data, np.uint8)
-            img = cv2.imdecode(data, 0)
+            img = data.reshape((lens[1], lens[2]))
             mmanager.put(param, img, proQ)
             returnmsg = proQ.get(block=True, timeout=5)
             m_rlt = returnmsg[0]
