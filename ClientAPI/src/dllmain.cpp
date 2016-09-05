@@ -29,17 +29,18 @@ void process(MyImg* pimg, Socket::TCP server)
 		cout << e << endl;
 		return;
 	}
-	cv::imencode(".tiff", pimg->img, buff);
-	int len[2];
+//	cv::imencode(".tiff", pimg->img, buff);
+	int len[3];
 	len[0] = strlen(pimg->m_name);
-	len[1] = buff.size();
-
+//	len[1] = buff.size();
+	len[1] = pimg->img.rows;
+	len[2] = pimg->img.cols;
 
 	try
 	{
-		server.send<int>(len, 2);
+		server.send<int>(len, 3);
 		server.send<char>(pimg->m_name, strlen(pimg->m_name));
-		server.send_1dbuffer(buff.data(),buff.size());
+		server.send_1dbuffer(pimg->img.data, len[1]*len[2]);
 		server.receive<char>(pimg->result, 128);
 	}
 	catch (Socket::SocketException &e)
