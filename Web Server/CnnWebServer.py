@@ -5,6 +5,7 @@ import socket
 import struct
 import json
 import pymongo
+import datetime
 
 cnnhost = "172.1.10.134"
 cnnport = 10102
@@ -48,9 +49,13 @@ def getrecord():
     res = {}
     res["总记录数目"] = num
     for sername in sernams:
-        num =  client.deepldb.test.find({"sername": sername}).count()
+        ser = {}
+        num = client.deepldb.test.find({"sername": sername}).count()
+        numt = client.deepldb.test.find({"sername": sername, "recordtime": {"$gt": datetime.datetime.today() - datetime.timedelta(days = 1)}}).count()
+        ser["全部"] = num
+        ser["24小时内"] = numt
         sername = sername.encode()
-        res[sername] = num
+        res[sername] = ser
     js = json.dumps(res, ensure_ascii=False)
     return js
 

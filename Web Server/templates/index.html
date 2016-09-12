@@ -38,14 +38,14 @@
             }
             else {
                 node.innerHTML = key
-		ulnode = document.createElement("ul")
+		        ulnode = document.createElement("ul")
                 innode = document.createElement("li")
                 innode.innerHTML = "负载:" + tt[key]["负载"]
                 ulnode.appendChild(innode)
                 innode = document.createElement("li")
                 innode.innerHTML = "fps:" + tt[key]["fps"]
                 ulnode.appendChild(innode)
-		node.appendChild(ulnode)
+		        node.appendChild(ulnode)
                 document.getElementById("list").appendChild(node)
             }
         }
@@ -54,9 +54,24 @@
         tt = eval("(" + data + ")")
         document.getElementById("nums").innerHTML = ""
         for (var key in tt) {
-            node = document.createElement("li")
-            node.innerHTML = key + ":" + tt[key]
-            document.getElementById("nums").appendChild(node)
+
+                node = document.createElement("li")
+            if(key == "总记录数目") {
+                node.innerHTML = key + ":" + tt[key]
+                document.getElementById("nums").appendChild(node)
+            }
+            else {
+                node.innerHTML = key
+		        ulnode = document.createElement("ul")
+                innode = document.createElement("li")
+                innode.innerHTML = "全部:" + tt[key]["全部"]
+                ulnode.appendChild(innode)
+                innode = document.createElement("li")
+                innode.innerHTML = "24小时内:" + tt[key]["24小时内"]
+                ulnode.appendChild(innode)
+		        node.appendChild(ulnode)
+                document.getElementById("nums").appendChild(node)
+            }
         }
     }
     setInterval(refreshstatus, 1000)
