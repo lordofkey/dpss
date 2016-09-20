@@ -4,7 +4,6 @@
 #include "stdafx.h"
 #include "SenderAPI.h"
 extern MyQueue que;
-extern PF proresul;
 // 这是导出变量的一个示例
 SENDERAPI_API int nSenderAPI=0;
 
@@ -20,13 +19,14 @@ CSenderAPI::CSenderAPI()
 {
 	return;
 }
-SENDERAPI_API bool SendImg(cv::Mat imgin, const char name[],void *param)
+SENDERAPI_API bool SendImg(cv::Mat imgin, const char name[],void *param, void *p)
 {
 	MyImg *aa;
 	aa = new MyImg();
 	aa->index = 0;
 	aa->param = param;
 	aa->img = imgin.clone();
+	aa->func = p;
 	cv::cvtColor(aa->img, aa->img, CV_RGB2GRAY);
 	strcpy(aa->m_name,name);
 	if(!que.pump(aa))
@@ -35,8 +35,4 @@ SENDERAPI_API bool SendImg(cv::Mat imgin, const char name[],void *param)
 		return false;
 	}
 	return true;
-}
-SENDERAPI_API void SetCallBack(void *p)
-{
-	proresul = (PF)p;
 }

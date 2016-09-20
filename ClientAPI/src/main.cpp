@@ -10,7 +10,6 @@ void receive(char* s,int len, void* param)
 
 int main()
 {
-	SetCallBack(receive);
 	int index = 0;
 	cv::Mat image, imageIn;
 	image = cv::imread("1.jpg");
@@ -19,7 +18,7 @@ int main()
 	while(true)
 	{
 		i ++;
-		if(SendImg(image, "pb_c"))
+		if(SendImg(image, "pb_c",NULL,receive))
 		{
 	//		std::cout << "sended1" << std::endl;
 		}

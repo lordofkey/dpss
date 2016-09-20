@@ -11,6 +11,7 @@ public:
 	char m_name[128];
 	char result[128];
 	void* param;
+	void* func;
 	int index;
 };
 

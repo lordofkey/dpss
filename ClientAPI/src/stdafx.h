@@ -17,6 +17,6 @@
 #include <opencv2\opencv.hpp>
 #include "MyQueue.h"
 #include "MyImg.h"
-typedef void (*PF)(char* s,int len, void* param);
+
 
 // TODO: 在此处引用程序需要的其他头文件

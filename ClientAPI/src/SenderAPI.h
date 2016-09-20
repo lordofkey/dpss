@@ -20,5 +20,5 @@ public:
 extern SENDERAPI_API int nSenderAPI;
 
 SENDERAPI_API int fnSenderAPI(void);
-SENDERAPI_API bool SendImg(cv::Mat imgin,const char name[],void *param = NULL);
+SENDERAPI_API bool SendImg(cv::Mat imgin,const char name[],void *param = NULL, void *p = NULL);
 SENDERAPI_API void SetCallBack(void *p);

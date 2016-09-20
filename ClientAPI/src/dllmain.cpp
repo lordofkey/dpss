@@ -10,7 +10,7 @@ typedef int ssize_t;
 #define  IP_ADDRESS "172.1.10.134"
 
 MyQueue que;
-PF proresul = NULL;
+typedef void (*PF)(char* s,int len, void* param);
 
 void process(MyImg* pimg, Socket::TCP server)
 {
@@ -85,6 +85,8 @@ DWORD WINAPI SendFun(LPVOID pM)
 		process(pimg, server);
 		pre = new char[128];
 		strcpy(pre,pimg->result);
+		PF proresul = NULL;
+		proresul = (PF)(pimg->func);
 		if(proresul != NULL)
 			proresul(pre, 128, pimg->param);
 		delete pimg;
