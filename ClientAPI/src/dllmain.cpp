@@ -1,6 +1,7 @@
 // dllmain.cpp : 定义 DLL 应用程序的入口点。
 #include "stdafx.h"
 #include "socket-lib/Socket.hpp"
+#include <direct.h>
 
 
 typedef int ssize_t;
@@ -11,6 +12,14 @@ typedef int ssize_t;
 
 MyQueue que;
 typedef void (*PF)(char* s,int len, void* param);
+
+class ipadr
+{
+public:
+	char ip[20];
+	int port;
+};
+
 
 void process(MyImg* pimg, Socket::TCP server)
 {
@@ -57,12 +66,16 @@ DWORD WINAPI SendFun(LPVOID pM)
 	char *pre;
 	MyImg *pimg;
 	Socket::TCP server;
+
+
+	ipadr* curipadr = (ipadr*)pM;
+
 	while (true)
 	{
 		pimg = (MyImg *)que.pop();
 		if(pimg == NULL)
 		{
-			Sleep(200);
+			Sleep(10);
 			continue;
 		}
 		if (!pimg->img.data)                              // Check for invalid input
@@ -73,7 +86,8 @@ DWORD WINAPI SendFun(LPVOID pM)
 		//TODO 图片检查
 		try
 		{
-			server.connect_to(Socket::Address(IP_ADDRESS, PORT));
+			server.connect_to(Socket::Address(curipadr->ip, curipadr->port));
+			printf("ip:%s,port%d", curipadr->ip, curipadr->port);
 		}
 		catch (Socket::SocketException &e)
 		{
@@ -84,7 +98,7 @@ DWORD WINAPI SendFun(LPVOID pM)
 		}
 		process(pimg, server);
 		pre = new char[128];
-		strcpy(pre,pimg->result);
+		strcpy_s(pre, 128, pimg->result);
 		PF proresul = NULL;
 		proresul = (PF)(pimg->func);
 		if(proresul != NULL)
@@ -107,14 +121,20 @@ BOOL APIENTRY DllMain( HMODULE hModule,
 					 )
 {
 	HANDLE sendthread;
-	HANDLE revthread;
+	ipadr* curipadr;
 	switch (ul_reason_for_call)
 	{
 	case DLL_PROCESS_ATTACH:
 		Socket::TCP::initcri();
+		curipadr = new ipadr();
+		char szModuleFileName[100];
+		_getcwd(szModuleFileName, 100);
+		strcat_s(szModuleFileName, 100, "\\setting.ini");
+		GetPrivateProfileString("dpss", "ip", "172.1.10.134", curipadr->ip, 20, szModuleFileName);
+		curipadr->port = GetPrivateProfileInt("dpss", "port", 8145, szModuleFileName);
 		for(int i = 0; i < 5; i++)
 		{
-			sendthread = CreateThread(NULL, 0, SendFun, NULL, 0, NULL);
+			sendthread = CreateThread(NULL, 0, SendFun, curipadr, 0, NULL);
 //			revthread = CreateThread(NULL, 0, RevFun, NULL, 0, NULL);
 		}
 	case DLL_THREAD_ATTACH:
