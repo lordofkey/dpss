@@ -5,7 +5,14 @@
 
 void receive(char* s,int len, void* param)
 {
-	std::cout << s << std::endl;
+	LARGE_INTEGER endCount;
+	LARGE_INTEGER freq;
+	LARGE_INTEGER startCount = *(LARGE_INTEGER*)param;
+	QueryPerformanceFrequency(&freq);
+	QueryPerformanceCounter(&endCount);
+	double elapsed =1000.0* (double)(endCount.QuadPart - startCount.QuadPart) / freq.QuadPart;
+	printf("time: %f  ms \n",elapsed);
+	printf("%s",s);
 }
 
 int main()
@@ -13,15 +20,23 @@ int main()
 	int index = 0;
 	cv::Mat image, imageIn;
 	image = cv::imread("1.jpg");
-	cv::resize(image, image, cv::Size(640, 480));
+	cv::resize(image, image, cv::Size(227, 227));
 	int i = 0;
 	while(true)
 	{
 		i ++;
-		if(SendImg(image, "pb_c",NULL,receive))
+
+		LARGE_INTEGER* startCount = new LARGE_INTEGER();
+
+		QueryPerformanceCounter(startCount);
+
+		if(SendImg(image, "yw_c",startCount,receive))
 		{
-	//		std::cout << "sended1" << std::endl;
+
+
+
 		}
-		Sleep(5);
+		Sleep(1000);
 	}
+	
 }

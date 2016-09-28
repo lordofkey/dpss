@@ -75,7 +75,7 @@ DWORD WINAPI SendFun(LPVOID pM)
 		pimg = (MyImg *)que.pop();
 		if(pimg == NULL)
 		{
-			Sleep(10);
+			Sleep(1);
 			continue;
 		}
 		if (!pimg->img.data)                              // Check for invalid input
