@@ -1,7 +1,6 @@
 # _*_coding:utf-8_*_
 import socket
 import numpy as np
-import cv2
 import struct
 import Queue
 import threading
@@ -9,7 +8,6 @@ import dpmanager
 import logging
 import pymongo
 import datetime
-
 
 logger = logging.getLogger('TOEClogger')
 logger.setLevel(logging.DEBUG)
@@ -23,17 +21,14 @@ ch.setFormatter(formatter)
 logger.addHandler(fh)
 logger.addHandler(ch)
 
-dbclient = pymongo.MongoClient(host="172.1.10.134")
+dbclient = pymongo.MongoClient()
 Qcon = Queue.Queue(200)
 HOST = '0.0.0.0'
 PORT = 8145
 inner_host = '0.0.0.0'
 inner_port = 9233
-PARAM_LEN = 128
-SAVE_IMG = 1
 httphost = '0.0.0.0'
 httpport = 10102
-
 
 
 try:
@@ -63,12 +58,10 @@ def receivedata():
             recv_size = 0
             data = ''
             while recv_size < file_size:
-                if file_size - recv_size > 10240:
-                    temp_recv = conn.recv(10240)
-                    data += temp_recv
+                if file_size - recv_size > 1024:
+                    data += conn.recv(1024)
                 else:
-                    temp_recv = conn.recv(file_size - recv_size)
-                    data += temp_recv
+                    data += conn.recv(file_size - recv_size)
                 recv_size = len(data)
             data = np.fromstring(data, np.uint8)
             img = data.reshape((lens[1], lens[2]))
@@ -92,7 +85,6 @@ def receivedata():
                 logger.exception("client connect exception")
 
         ##################################################################################
-
 
 def updateshow():
     sh = socket.socket()
@@ -135,7 +127,11 @@ while True:
     try:
         conn, addr = s.accept()
         Qcon.put(conn)
+    except KeyboardInterrupt:
+        print "exit"
+        break
     except:
         logger.exception("socket acception Exception Logged")
         continue
+
 

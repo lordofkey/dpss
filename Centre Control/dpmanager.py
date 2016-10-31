@@ -6,11 +6,31 @@ import cv2
 import time
 import Queue
 import logging
+
 QMAX = 500
 logger = logging.getLogger('TOEClogger')
+class Mylist(list):
+    def __init__(self):
+        list.__init__(self)
+        self.mutex = threading.Lock()
+
+    def append(self, p_object):
+        self.mutex.acquire()
+        list.append(self, p_object)
+        self.mutex.release()
+
+    def clean(self):
+        self.mutex.acquire()
+        for model in self:
+            if model.flag == 0:
+                self.remove(model)
+                break
+        self.mutex.release()
+
 
 class NoModelResource(Exception):
     pass
+
 
 class ModelPro:
     def __init__(self, conn):
@@ -46,7 +66,7 @@ class ModelPro:
                 img_in = cv2.resize(img_in, (self.width, self.height))
                 self.conn.sendall(img_in.data.__str__())
                 data = self.conn.recv(128)
-                len1, len2, self.fps = struct.unpack("3i",data[:12])
+                len1, len2, self.fps = struct.unpack("3i", data[:12])
                 m_rlt, adrr = struct.unpack(str(len1) + 's' + str(len2) + 's',data[12:])
                 Qpro.put((m_rlt, adrr))
             except Queue.Empty:
@@ -63,17 +83,22 @@ class ModelPro:
 ####################################################################加入返回列队
         self.conn.close()
         self.flag = 0
+        while True:
+            try:
+                tmp = self.qimpro.get(block=False)
+                conc = tmp[1]
+                conc.send("failed")
+                conc.close()
+            except:
+                break
         return
-
-
 
 
 class ModelManage:
     def __init__(self, host='0.0.0.0', port=9231):
         self.host = host
         self.port = port
-        self.listmutex = threading.Lock()
-        self.modellist = list()
+        self.modellist = Mylist()
         sthread = threading.Thread(target=self.cnn_add)
         sthread.setDaemon(True)
         sthread.start()
@@ -96,24 +121,10 @@ class ModelManage:
     def cnn_destroy(self):
         while True:
             time.sleep(0.5)
-            self.listmutex.acquire()
-            for model in self.modellist:
-                if model.flag == 0:
-                    self.modellist.remove(model)
-                    model_rm = model
-                    break
-            self.listmutex.release()
-            try:
-                while True:
-                    tmp = model_rm.qimpro.get(block=False)
-                    conc = tmp[1]
-                    conc.sendall("failed")
-                    conc.close()
-            except:
-                continue
+            self.modellist.clean()
 
     def put(self, model_name, img, proQ):
-        self.listmutex.acquire()
+        self.modellist.mutex.acquire()
         try:
             for model in self.modellist:
                 if model.name[:4] == model_name[:4]:
@@ -123,15 +134,15 @@ class ModelManage:
         except:
             logger.exception('put exception')
         finally:
-            self.listmutex.release()
+            self.modellist.mutex.release()
         raise NoModelResource("No Model")
 
     def checkload(self):
         qlist = list()
-        self.listmutex.acquire()
+        self.modellist.mutex.acquire()
         for model in self.modellist:
-            qlist.append((model.name, model.qimpro.qsize(), model.fps ))
-        self.listmutex.release()
+            qlist.append((model.name, model.qimpro.qsize(), model.fps))
+        self.modellist.mutex.release()
         return qlist
 
 

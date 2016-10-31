@@ -7,9 +7,9 @@ import json
 import pymongo
 import datetime
 
-cnnhost = "172.1.10.134"
+cnnhost = "localhost"
 cnnport = 10102
-dbhost = "172.1.10.134"
+dbhost = "localhost"
 dbport = 27017
 app = Flask(__name__)
 

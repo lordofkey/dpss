@@ -9,32 +9,24 @@ import struct
 import commands
 import os
 
-
 workdir = os.getcwd()
-innerhost = "172.1.10.134"
+innerhost = "localhost"
 innerport = 9233
-
 SAVE_IMG = 0
 
-width = 227
-height = 227
-channel = 3
 
-class CycCheck(Exception):
-    def __init__(self):
-        Exception.__init__(self)
-
-
-class models(object):
-    def __init__(self, num = 0):
+class Model(object):
+    def __init__(self, num=0):
         self.name = ''
+        self.width = 227
+        self.height = 277
+        self.channel = 3
         self.type = ''
         self.labels = []
         self.tf_param = []  #pred, x, keep_prob
         self.initmodel(num)
         self.initlabel()
     def initmodel(self, num):
-        global width, height, channel
         dom = xml.dom.minidom.parse('config.xml')
         root = dom.documentElement
         m_mdlnum = root.getElementsByTagName('modelnum')
@@ -50,10 +42,9 @@ class models(object):
             temp_a = caffe.io.caffe_pb2.BlobProto.FromString(proto_data)
             img_mean = caffe.io.blobproto_to_array(temp_a)[0]
             self.net = caffe.Net(self.model_path + 'deploy.prototxt', self.model_path + 'model.caffemodel', caffe.TEST)
-            tm1, channel, width, height = self.net.blobs['data'].data.shape
- 
+            tm1, self.channel, self.width, self.height = self.net.blobs['data'].data.shape
             img_mean = np.transpose(img_mean, [1, 2, 0])
-            img_mean = cv2.resize(img_mean, (width, height))
+            img_mean = cv2.resize(img_mean, (self.width, self.height))
             self.mean = np.transpose(img_mean, [2, 0, 1])                  
             print 'caffe done!'
         elif self.type == 'tensorflow':
@@ -71,36 +62,41 @@ class models(object):
             pass
         else:
             print 'can not recognized the frame!'
+
     def initlabel(self):
-        f = open(self.model_path + 'labels.txt', 'r')
-        while True:
-            line = f.readline()
-            line = line.strip('\n')
-            # if SAVE_IMG:
-                # commands.getstatusoutput('mkdir -p pic/' + model.name + '/' + m_date + '/' + line)
-            if line:
-                self.labels.append(line)
-            else:
-                break
-        f.close()
-
-
-def receiveimg(s, imglen):
-    data = ''
-    recv_size = 0
-    while recv_size < imglen:
-        if imglen - recv_size > 10240:
-            temp_recv = s.recv(10240)
-            data += temp_recv
+        try:
+            f = open(self.model_path + 'labels.txt', 'r')
+            while True:
+                line = f.readline()
+                line = line.strip('\n')
+                # if SAVE_IMG:
+                    # commands.getstatusoutput('mkdir -p pic/' + model.name + '/' + m_date + '/' + line)
+                if line:
+                    self.labels.append(line)
+                else:
+                    break
+            f.close()
+        except:
+            self.labels.append("test1")
+            self.labels.append("test2")
+    def predict(self, img):
+        if self.type == 'caffe':
+            img_in = cv2.cvtColor(img, cv2.COLOR_GRAY2RGB)
+            img_in = np.transpose(img_in, [2, 0, 1])
+            img_in = img_in.astype(np.float32)
+            img_in -= self.mean
+            self.net.blobs['data'].data[...] = [img_in]
+            output = self.net.forward()
+            predictions = output['prob']
+        elif self.type == 'tensorflow':
+            img_in = cv2.cvtColor(img, cv2.COLOR_GRAY2RGB)
+            img_in = img_in.astype(np.float32)
+            img_in /= 255
+            predictions = self.sess.run(self.pred, feed_dict={self.x: [img_in], self.keep_prob: 1.})
         else:
-            temp_recv = s.recv(imglen - recv_size)
-            data += temp_recv
-        recv_size = len(data)
-        if recv_size == 14:
-            if data == 'are you there?':
-                s.sendall('yes')
-                data = ''
-    return data
+            predictions = (2.2, 1.6)
+        m_rlt = self.labels[np.argmax(predictions)]
+        return m_rlt
 
 
 class FpsCheck(object):
@@ -119,63 +115,78 @@ class FpsCheck(object):
             self.fps = fps
         return self.fps
 
-m_date = str(datetime.datetime.now().strftime("%Y-%m-%d-%H:%M:%S"))
+
+class imgSaver:
+    def __init__(self):
+        self.m_date = str(datetime.datetime.now().strftime("%Y-%m-%d-%H:%M:%S"))
+        self.ca_num = 0
+    def save(self, issave):
+        if(0 == self.ca_num%2000):
+            picFolder = str(self.ca_num)
+        filename = workdir + \
+                   '/pic/' + \
+                   m_model.name + \
+                   '/' + self.m_date + \
+                   '/' + m_rlt + \
+                   '/' + picFolder + \
+                   '/' + str(self.ca_num) + \
+                   '.jpg'
+        if issave:
+            commands.getstatusoutput('mkdir -p pic/' + m_model.name + '/' + self.m_date + '/' + m_rlt + '/' + picFolder)
+            cv2.imwrite(filename, img)
+        self.ca_num += 1
+        return filename
+
+
+def receiveimg(s, imglen):
+    data = ''
+    recv_size = 0
+    while recv_size < imglen:
+        if imglen - recv_size > 10240:
+            data += s.recv(10240)
+        else:
+            data += s.recv(imglen - recv_size)
+        recv_size = len(data)
+        if data == 'are you there?':
+            s.sendall('yes')
+            data = ''
+    return data
+
 mn = int(sys.argv[1])
-
-print mn
-m_model = models(mn)
-imglen = width * height
-
-ca_num = 0
-picFolder = ''
-
+m_model = Model(mn)
+imglen = m_model.width * m_model.height
 s = socket.socket()
 s.connect((innerhost, innerport))
-name = m_model.name
-name_len = len(name)
-data = struct.pack('=i'+str(name_len)+'s3i', name_len, name, width, height, channel)
+data = struct.pack('=i'+str(len(m_model.name))+'s3i',
+                   len(m_model.name),
+                   m_model.name,
+                   m_model.width,
+                   m_model.height,
+                   m_model.channel)
 s.sendall(data)
 data = s.recv(20)
 if data == 'connect secceed':
     print 'secceed'
-
 fps = FpsCheck()
+saver = imgSaver()
 while True:
     try:
         data = receiveimg(s, imglen)
-    except CycCheck:
-        continue
     except:
         break
     img = np.fromstring(data, dtype=np.uint8)
-    img = img.reshape(height, width)
-    m_rlt = ''
-    if m_model.type == 'caffe':
-        img_in = cv2.cvtColor(img, cv2.COLOR_GRAY2RGB)
-        img_in = np.transpose(img_in, [2, 0, 1])
-        img_in = img_in.astype(np.float32)
-        img_in -= m_model.mean
-        m_model.net.blobs['data'].data[...] = [img_in]
-        output = m_model.net.forward()
-        predictions = output['prob']
-    if m_model.type == 'tensorflow':
-        img_in = cv2.cvtColor(img, cv2.COLOR_GRAY2RGB)
-        img_in = img_in.astype(np.float32)
-        img_in /= 255
-        predictions = m_model.sess.run(m_model.pred, feed_dict={m_model.x: [img_in], m_model.keep_prob: 1.})
-    else:
-        predictions = (2.2, 1.6)
-    m_rlt = m_model.labels[np.argmax(predictions)]
+    img = img.reshape(m_model.height, m_model.width)
+# {outputdata m_rlt:result nfps: speed filename: store dir
+    m_rlt = m_model.predict(img)
     nfps = fps.process()
-    if(0 == ca_num % 2000):
-        picFolder = str(ca_num)
-    filename = workdir + '/pic/' + m_model.name + '/' + m_date + '/' + m_rlt + '/' + picFolder + '/' + str(ca_num) + '.jpg'
-    if SAVE_IMG:
-        commands.getstatusoutput('mkdir -p pic/' + m_model.name + '/' + m_date + '/' + m_rlt + '/' + picFolder)
-        cv2.imwrite(filename, img)
+    filename = saver.save(SAVE_IMG)
+# }
     len_m_rlt = len(m_rlt)
     len_filename = len(filename)
-    data = struct.pack('=3i' + str(len_m_rlt) + 's' + str(len_filename) + 's', len_m_rlt, len_filename, nfps, m_rlt, filename)
+    data = struct.pack('=3i' + str(len_m_rlt) + 's' + str(len_filename) + 's',
+                       len_m_rlt,
+                       len_filename,
+                       nfps, m_rlt,
+                       filename)
     s.sendall(data)
-    ca_num += 1
 s.close()
