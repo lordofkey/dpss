@@ -78,9 +78,17 @@ DWORD WINAPI SendFun(LPVOID pM)
 			Sleep(1);
 			continue;
 		}
+		if(pimg->func == NULL)
+		{
+			Sleep(1);
+			continue;
+		}
+		PF proresul = (PF)(pimg->func);
+
 		if (!pimg->img.data)                              // Check for invalid input
 		{
 			cout << "Could not open or find the image" << std::endl;
+			proresul("invalid img\n", 12, pimg->param);
 			continue;
 		}
 		//TODO 图片检查
@@ -91,6 +99,7 @@ DWORD WINAPI SendFun(LPVOID pM)
 		}
 		catch (Socket::SocketException &e)
 		{
+			proresul("no server\n", 10, pimg->param);
 			cout << e << endl;
 //TODO回掉处理函数
 			server.close();
@@ -99,10 +108,7 @@ DWORD WINAPI SendFun(LPVOID pM)
 		process(pimg, server);
 		pre = new char[128];
 		strcpy_s(pre, 128, pimg->result);
-		PF proresul = NULL;
-		proresul = (PF)(pimg->func);
-		if(proresul != NULL)
-			proresul(pre, 128, pimg->param);
+		proresul(pre, 128, pimg->param);
 		delete pimg;
 		pimg = NULL;
 		server.close();
