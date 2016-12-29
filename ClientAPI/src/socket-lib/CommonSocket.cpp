@@ -32,7 +32,6 @@ namespace Socket
 #ifdef WINDOWS
     unsigned int CommonSocket::_num_sockets = 0;
 	CRITICAL_SECTION CommonSocket::cs; 
-	
 #endif
 	void CommonSocket::initcri()
 	{

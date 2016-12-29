@@ -32,9 +32,6 @@ int main()
 
 		if(SendImg(image, "yw_c",startCount,receive))
 		{
-
-
-
 		}
 		Sleep(1000);
 	}

@@ -26,7 +26,7 @@
 #define _TCP_CPP_
 
 #include "Socket.hpp"
-
+#include <WinIoCtl.h>
 namespace Socket
 {
     TCP::TCP(void) : CommonSocket(SOCK_STREAM)
@@ -66,23 +66,43 @@ namespace Socket
             throw SocketException(error.str());
         }
     }
-    
-    void TCP::connect_to(Address address)
-    {
-        if (this->_binded) throw SocketException("[connect_to] Socket already binded to a port, use another socket");
 
-        if (!this->_opened) this->open();
-        
-        if (connect(this->_socket_id, (struct sockaddr*)&address, sizeof(struct sockaddr_in)) < 0)
-        {
-            stringstream error;
-            error << "[connect_to] with [address=" << address << "] Cannot connect to the specified address";
-            throw SocketException(error.str());
-        }
-        
-        this->_binded = true;
-    }
-    
+	void TCP::connect_to(Address address)
+	{
+		if (this->_binded) throw SocketException("[connect_to] Socket already binded to a port, use another socket");
+
+		if (!this->_opened) this->open();
+
+		///////////////////////////////////
+		unsigned long ul = 1;
+		ioctlsocket(this->_socket_id, FIONBIO, &ul);
+		
+		/////////////////////////////////////
+		int status = connect(this->_socket_id, (struct sockaddr*)&address, sizeof(struct sockaddr_in));
+		if (status != -1)
+		{
+			Socket::SocketException tt("ip or port invalide");
+			throw tt;
+		}
+		ul = 0;
+		ioctlsocket(this->_socket_id, FIONBIO, &ul);
+		timeval tm;
+		fd_set Write, Err;
+		tm.tv_sec = 1;
+		tm.tv_usec = 0;
+		FD_ZERO(&Write);
+		FD_ZERO(&Err);
+		FD_SET(this->_socket_id, &Write);
+		FD_SET(this->_socket_id, &Err);
+		select(0, NULL, &Write, &Err, &tm);
+		if(!FD_ISSET(this->_socket_id, &Write))
+		{
+			Socket::SocketException tt("no server");
+			throw tt;
+		}
+		this->_binded = true;
+	}
+
     TCP TCP::accept_client(void)
     {
         TCP ret;
